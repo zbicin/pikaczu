@@ -26,4 +26,12 @@ public class PeriodList {
     public void add(int number) {
         this.adapter.add(number);
     }
+
+    public Integer[] getItems() {
+        Integer[] items = new Integer[this.adapter.getCount()];
+        for(int i = 0; i<items.length; i++) {
+            items[i] = this.adapter.getItem(i);
+        }
+        return items;
+    }
 }
