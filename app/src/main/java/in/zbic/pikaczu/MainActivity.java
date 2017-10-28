@@ -1,6 +1,7 @@
 package in.zbic.pikaczu;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -17,10 +18,8 @@ import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, DialogInterface.OnClickListener, DialogInterface.OnCancelListener {
 
-    private final int UNKNOWN_INDEX = -1;
-
-    private ArrayList<Integer> chosenPeriods = new ArrayList<Integer>();
-    private int editedPeriodIndex = this.UNKNOWN_INDEX;
+    private ArrayList<Integer> chosenPeriods = null;
+    private int editedPeriodIndex = Constants.UNKNOWN_INDEX;
     private Button buttonAdd;
     private Button buttonStart;
     private Button buttonStop;
@@ -34,11 +33,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(this.chosenPeriods == null) {
+            this.chosenPeriods  = new ArrayList<Integer>();
+        }
 
         Collections.addAll(this.availablePeriods, 1, 2, 3, 5, 10);
 
         setContentView(R.layout.activity_main);
-
 
         this.dialogTimeSelector = this.createDialogTimeSelector();
         this.dialogTimeSelector.setOnCancelListener(this);
@@ -52,20 +53,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.listPeriodsAdapter = new PeriodAdapter(this, this.chosenPeriods, this);
         this.listPeriods.setAdapter(this.listPeriodsAdapter);
 
-        Toast toast = Toast.makeText(this.getApplicationContext(), "Ding!", Toast.LENGTH_SHORT);
-        Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), notification);
         //this.pikacz = new Pikacz(this, ringtone, toast);
     }
 
     public void startBeeper() {
         this.buttonStart.setVisibility(View.GONE);
         this.buttonStop.setVisibility(View.VISIBLE);
+
+        Intent startIntent = new Intent(MainActivity.this, BeeperService.class);
+        startIntent.setAction(Constants.START_SERVICE_ACTION);
+        startService(startIntent);
     }
 
     public void stopBeeper() {
-        this.buttonStart.setVisibility(View.GONE);
-        this.buttonStop.setVisibility(View.VISIBLE);
+        this.buttonStart.setVisibility(View.VISIBLE);
+        this.buttonStop.setVisibility(View.GONE);
+
+        Intent stopIntent = new Intent(MainActivity.this, BeeperService.class);
+        stopIntent.setAction(Constants.STOP_SERVICE_ACTION);
+        startService(stopIntent);
     }
 
     @Override
@@ -83,8 +89,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.buttonRemovePeriod:
                 position = (int)view.getTag();
-                this.chosenPeriods.remove(position);
-                this.listPeriodsAdapter.notifyDataSetChanged();
+                this.removePeriod(position);
                 break;
             case R.id.buttonEditPeriod:
                 position = (int)view.getTag();
@@ -92,6 +97,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 this.dialogTimeSelector.show();
                 break;
         }
+    }
+
+    private void removePeriod(int position) {
+        this.chosenPeriods.remove(position);
+        if(this.chosenPeriods.size() == 0) {
+            this.buttonStart.setEnabled(true);
+        }
+        this.listPeriodsAdapter.notifyDataSetChanged();
     }
 
     private AlertDialog createDialogTimeSelector() {
@@ -113,18 +126,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(DialogInterface dialogInterface, int i) {
         Integer item = this.availablePeriods.get(i);
 
-        if (this.editedPeriodIndex == this.UNKNOWN_INDEX) {
+        if (this.editedPeriodIndex == Constants.UNKNOWN_INDEX) {
             this.chosenPeriods.add(item);
+            this.buttonStart.setEnabled(true);
         } else {
             this.chosenPeriods.set(this.editedPeriodIndex, item);
         }
 
-        this.editedPeriodIndex = this.UNKNOWN_INDEX;
+        this.editedPeriodIndex = Constants.UNKNOWN_INDEX;
         this.listPeriodsAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onCancel(DialogInterface dialogInterface) {
-        this.editedPeriodIndex = this.UNKNOWN_INDEX;
+        this.editedPeriodIndex = Constants.UNKNOWN_INDEX;
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putIntegerArrayList("chosenPeriods", this.chosenPeriods);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        this.chosenPeriods = savedInstanceState.getIntegerArrayList("chosenPeriods");
     }
 }

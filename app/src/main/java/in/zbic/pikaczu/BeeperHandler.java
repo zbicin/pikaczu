@@ -11,11 +11,12 @@ import android.widget.Toast;
  * Created by krzysiek on 27.10.17.
  */
 
-public class PikaczHandler extends Handler {
+public class BeeperHandler extends Handler {
+
     private Toast toast;
     private Ringtone ringtone;
 
-    public PikaczHandler(Looper looper, Ringtone ringtone, Toast toast) {
+    public BeeperHandler(Looper looper, Toast toast, Ringtone ringtone) {
         super(looper);
         this.ringtone = ringtone;
         this.toast = toast;
@@ -23,9 +24,7 @@ public class PikaczHandler extends Handler {
 
     @Override
     public void handleMessage(Message message) {
-        try {
-            this.ringtone.play();
-            this.toast.show();
-        } catch(Exception e) {}
+        this.toast.show();
+        this.ringtone.play();
     }
 }

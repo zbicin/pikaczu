@@ -13,9 +13,10 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:text="Edytuj"/>
+
     <Button
         android:id="@+id/buttonRemovePeriod"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:text="Usuń"/>
+        android:text="Usuń" />
 </LinearLayout>
