@@ -3,12 +3,19 @@
     android:orientation="horizontal" android:layout_width="match_parent"
     android:layout_height="match_parent">
         <TextView
-            android:id="@+id/periodLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent" />
-        <Button
-            android:id="@+id/removePeriodButton"
+            android:id="@+id/labelPeriod"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="Usuń"/>
+            android:text="Hello"
+            android:gravity="center_vertical"/>
+    <Button
+        android:id="@+id/buttonEditPeriod"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="Edytuj"/>
+    <Button
+        android:id="@+id/buttonRemovePeriod"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:text="Usuń"/>
 </LinearLayout>
