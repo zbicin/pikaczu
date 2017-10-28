@@ -1,7 +1,10 @@
 package in.zbic.pikaczu;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -10,9 +13,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
 import android.app.AlertDialog;
-
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -53,7 +54,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.listPeriodsAdapter = new PeriodAdapter(this, this.chosenPeriods, this);
         this.listPeriods.setAdapter(this.listPeriodsAdapter);
 
-        //this.pikacz = new Pikacz(this, ringtone, toast);
+        if(isServiceRunning(BeeperService.class)) {
+            this.buttonStart.setVisibility(View.GONE);
+            this.buttonStop.setVisibility(View.VISIBLE);
+        }
     }
 
     public void startBeeper() {
@@ -142,16 +146,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.editedPeriodIndex = Constants.UNKNOWN_INDEX;
     }
 
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putIntegerArrayList("chosenPeriods", this.chosenPeriods);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        this.chosenPeriods = savedInstanceState.getIntegerArrayList("chosenPeriods");
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
