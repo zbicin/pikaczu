@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.sharedPreferences = this.getSharedPreferences(Constants.PREFERENCES_FILE, MODE_PRIVATE);
         restoreChosenPeriods();
 
-        Collections.addAll(this.availablePeriods, 1, 2, 3, 5, 10);
+        Collections.addAll(this.availablePeriods, Constants.AVAILABLE_PERIODS);
 
         setContentView(R.layout.activity_main);
 
@@ -60,21 +60,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if(isServiceRunning(BeeperService.class)) {
             this.buttonStart.setVisibility(View.GONE);
             this.buttonStop.setVisibility(View.VISIBLE);
+            this.listPeriodsAdapter.setEnabled(false);
         }
+        this.buttonStart.setEnabled(this.chosenPeriods.size() > 0);
     }
 
     public void startBeeper() {
         this.buttonStart.setVisibility(View.GONE);
         this.buttonStop.setVisibility(View.VISIBLE);
+        this.listPeriodsAdapter.setEnabled(false);
 
         Intent startIntent = new Intent(MainActivity.this, BeeperService.class);
         startIntent.setAction(Constants.START_SERVICE_ACTION);
+        startIntent.putExtra(Constants.CHOSEN_PERIODS, this.chosenPeriods);
         startService(startIntent);
     }
 
     public void stopBeeper() {
         this.buttonStart.setVisibility(View.VISIBLE);
         this.buttonStop.setVisibility(View.GONE);
+        this.listPeriodsAdapter.setEnabled(true);
 
         Intent stopIntent = new Intent(MainActivity.this, BeeperService.class);
         stopIntent.setAction(Constants.STOP_SERVICE_ACTION);
@@ -115,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void removePeriod(int position) {
         this.chosenPeriods.remove(position);
         if(this.chosenPeriods.size() == 0) {
-            this.buttonStart.setEnabled(true);
+            this.buttonStart.setEnabled(false);
         }
         this.listPeriodsAdapter.notifyDataSetChanged();
     }
@@ -125,8 +130,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         for (int i = 0; i<this.availablePeriods.size(); i++) {
             StringBuilder sb = new StringBuilder();
-            sb.append(this.availablePeriods.get(i));
-            sb.append(" sekund");
+            Integer period = this.availablePeriods.get(i);
+            boolean isMinutes = period >= 60;
+            Integer normalizedPeriod = isMinutes ? (period / 60) : period;
+            String unit = isMinutes ? " minut" : " sekund";
+            sb.append(normalizedPeriod);
+            sb.append(unit);
             this.periodLabels.add(sb.toString());
         }
 
@@ -142,6 +151,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (this.editedPeriodIndex == Constants.UNKNOWN_INDEX) {
             this.chosenPeriods.add(item);
             this.buttonStart.setEnabled(true);
+            this.listPeriodsAdapter.setEnabled(true);
         } else {
             this.chosenPeriods.set(this.editedPeriodIndex, item);
         }
@@ -153,6 +163,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onCancel(DialogInterface dialogInterface) {
         this.editedPeriodIndex = Constants.UNKNOWN_INDEX;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
     }
 
     private boolean isServiceRunning(Class<?> serviceClass) {
@@ -173,8 +189,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void restoreChosenPeriods() {
-        String stringifiedChosenPeriods = this.sharedPreferences.getString(Constants.STRINGIFIED_CHOSEN_PERIODS_KEY, null);
-        if(stringifiedChosenPeriods != null) {
+        String stringifiedChosenPeriods = this.sharedPreferences.getString(Constants.STRINGIFIED_CHOSEN_PERIODS_KEY, "");
+        if(stringifiedChosenPeriods.length() > 0) {
             String[] items = stringifiedChosenPeriods.split(Constants.SEPARATOR);
             for (String item : items) {
                 Integer period = Integer.parseInt(item);

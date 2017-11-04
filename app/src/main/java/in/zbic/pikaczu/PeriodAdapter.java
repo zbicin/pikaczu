@@ -16,9 +16,11 @@ import java.util.ArrayList;
 
 public class PeriodAdapter extends ArrayAdapter<Integer> {
     private MainActivity mainActivity;
+    private Boolean enabled;
     public PeriodAdapter(Context context, ArrayList<Integer> periods, MainActivity mainActivity) {
         super(context, 0, periods);
         this.mainActivity = mainActivity;
+        this.enabled = true;
     }
 
     @Override
@@ -32,14 +34,22 @@ public class PeriodAdapter extends ArrayAdapter<Integer> {
 
         Button removeButton = (Button) convertView.findViewById(R.id.buttonRemovePeriod);
         removeButton.setTag(position);
+        removeButton.setEnabled(this.enabled);
         removeButton.setOnClickListener(this.mainActivity);
         Button editButton = (Button) convertView.findViewById(R.id.buttonEditPeriod);
         editButton.setTag(position);
+        editButton.setEnabled(this.enabled);
         editButton.setOnClickListener(this.mainActivity);
 
         TextView label = (TextView) convertView.findViewById(R.id.labelPeriod);
+        label.setEnabled(this.enabled);
         label.setText(this.mainActivity.periodLabels.get(periodIndex));
 
         return convertView;
+    }
+
+    public void setEnabled(Boolean value) {
+        this.enabled = value;
+        this.notifyDataSetChanged();
     }
 }

@@ -17,4 +17,6 @@ public class Constants {
     public static final String STRINGIFIED_CHOSEN_PERIODS_KEY = "in.zbic.stringifiedChosenPeriods";
     public static final String SEPARATOR = ",";
     public static final String PREFERENCES_FILE = "pikaczu";
+    public static final String CHOSEN_PERIODS = "in.zbic.chosenPeriods";
+    public static final Integer[] AVAILABLE_PERIODS = {1, 2, 3, 5, 10, 30, 60, 120, 180, 300, 600, 900, 1200, 1500, 1800, 2400, 3000, 3600};
 }

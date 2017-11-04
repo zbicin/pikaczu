@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -18,6 +19,8 @@ import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 /**
  * Created by krzysiek on 28.10.17.
@@ -35,6 +38,7 @@ public class BeeperService extends Service {
     private PendingIntent playPendingIntent;
     private PendingIntent nextPendingIntent;
     private PendingIntent previousPendingIntent;
+    private PendingIntent stopPendingIntent;
 
     private PendingIntent createPendingIntent(String action) {
         Intent intent = new Intent(this, BeeperService.class);
@@ -62,26 +66,26 @@ public class BeeperService extends Service {
                 .setOngoing(true);
 
         if(this.isEnabled) {
-            builder.addAction(android.R.drawable.ic_media_previous, "", this.previousPendingIntent)
-                   .addAction(android.R.drawable.ic_media_pause, "", this.pausePendingIntent)
-                   .addAction(android.R.drawable.ic_media_next, "", this.nextPendingIntent);
+            //builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "", this.stopPendingIntent);
+                   //.addAction(android.R.drawable.ic_media_pause, "", this.pausePendingIntent)
+                   //.addAction(android.R.drawable.ic_media_next, "", this.nextPendingIntent);
         } else {
-            builder.addAction(android.R.drawable.ic_media_previous, "", this.previousPendingIntent)
-                   .addAction(android.R.drawable.ic_media_play, "", this.playPendingIntent)
-                   .addAction(android.R.drawable.ic_media_next, "", this.nextPendingIntent);
+            //builder.addAction(android.R.drawable.ic_media_previous, "", this.previousPendingIntent)
+            //       .addAction(android.R.drawable.ic_media_play, "", this.playPendingIntent)
+            //       .addAction(android.R.drawable.ic_media_next, "", this.nextPendingIntent);
         }
 
         return builder.build();
     }
 
-    private void startService() {
+    private void startService(ArrayList<Integer> periods) {
         Log.i(LOG_TAG, "Received Start Service Intent ");
         this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         this.nextPendingIntent = this.createPendingIntent(Constants.NEXT_SERVICE_ACTION);
         this.previousPendingIntent = this.createPendingIntent(Constants.PREVIOUS_SERVICE_ACTION);
         this.pausePendingIntent = this.createPendingIntent(Constants.PAUSE_SERVICE_ACTION);
         this.playPendingIntent = this.createPendingIntent(Constants.PLAY_SERVICE_ACTION);
-
+        this.stopPendingIntent = this.createPendingIntent(Constants.STOP_SERVICE_ACTION);
 
         Uri notificationSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), notificationSoundUri);
@@ -90,6 +94,12 @@ public class BeeperService extends Service {
         this.handlerThread = new HandlerThread(getResources().getString(R.string.app_name));
         this.handlerThread.start();
         this.handler = new BeeperHandler(this.handlerThread.getLooper(), toast, ringtone);
+
+        Integer periodsSum = 0;
+        for(Integer period : periods) {
+            periodsSum += period;
+            this.handler.sendEmptyMessageDelayed(0, periodsSum * 1000);
+        }
 
         Notification notification = this.createNotification();
         startForeground(Constants.SERVICE_ID, notification);
@@ -107,7 +117,9 @@ public class BeeperService extends Service {
         String action = intent.getAction();
         switch (action) {
             case Constants.START_SERVICE_ACTION:
-                this.startService();
+                Bundle extras = intent.getExtras();
+                ArrayList<Integer> periods = extras.getIntegerArrayList(Constants.CHOSEN_PERIODS);
+                this.startService(periods);
                 break;
             case Constants.PREVIOUS_SERVICE_ACTION:
                 Log.i(LOG_TAG, "Clicked Previous");
@@ -140,11 +152,6 @@ public class BeeperService extends Service {
 
     private void updateNotification() {
         this.notificationManager.notify(Constants.SERVICE_ID, this.createNotification());
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
     }
 
     @Override
