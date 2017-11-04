@@ -14,4 +14,7 @@ public class Constants {
     public static final String PREVIOUS_SERVICE_ACTION = "in.zbic.service.previous";
     public static final String STOP_SERVICE_ACTION = "in.zbic.service.stop";
     public static final int SERVICE_ID = 101;
+    public static final String STRINGIFIED_CHOSEN_PERIODS_KEY = "in.zbic.stringifiedChosenPeriods";
+    public static final String SEPARATOR = ",";
+    public static final String PREFERENCES_FILE = "pikaczu";
 }

@@ -5,11 +5,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -27,6 +25,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ListView listPeriods;
     private PeriodAdapter listPeriodsAdapter;
     private AlertDialog dialogTimeSelector;
+    private SharedPreferences sharedPreferences;
+
 
     public ArrayList<Integer> availablePeriods = new ArrayList<Integer>();
     public ArrayList<String> periodLabels = new ArrayList<String>();
@@ -37,6 +37,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if(this.chosenPeriods == null) {
             this.chosenPeriods  = new ArrayList<Integer>();
         }
+
+        this.sharedPreferences = this.getSharedPreferences(Constants.PREFERENCES_FILE, MODE_PRIVATE);
+        restoreChosenPeriods();
 
         Collections.addAll(this.availablePeriods, 1, 2, 3, 5, 10);
 
@@ -76,6 +79,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Intent stopIntent = new Intent(MainActivity.this, BeeperService.class);
         stopIntent.setAction(Constants.STOP_SERVICE_ACTION);
         startService(stopIntent);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        this.storeChosenPeriods();
     }
 
     @Override
@@ -154,5 +163,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
         return false;
+    }
+
+    private void storeChosenPeriods() {
+        String stringifiedChosenPeriods = TextUtils.join(Constants.SEPARATOR, this.chosenPeriods);
+        SharedPreferences.Editor editor = this.sharedPreferences.edit();
+        editor.putString(Constants.STRINGIFIED_CHOSEN_PERIODS_KEY, stringifiedChosenPeriods);
+        editor.commit();
+    }
+
+    private void restoreChosenPeriods() {
+        String stringifiedChosenPeriods = this.sharedPreferences.getString(Constants.STRINGIFIED_CHOSEN_PERIODS_KEY, null);
+        if(stringifiedChosenPeriods != null) {
+            String[] items = stringifiedChosenPeriods.split(Constants.SEPARATOR);
+            for (String item : items) {
+                Integer period = Integer.parseInt(item);
+                this.chosenPeriods.add(period);
+            }
+        }
     }
 }
