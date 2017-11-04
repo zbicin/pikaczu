@@ -15,12 +15,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by krzysiek on 28.10.17.
@@ -30,8 +33,7 @@ public class BeeperService extends Service {
     static final String LOG_TAG = "BeeperService";
 
     private HandlerThread handlerThread;
-    private Handler handler;
-    private Integer stepCounter = 0;
+    private BeeperHandler handler;
     private boolean isEnabled = true;
     private NotificationManager notificationManager;
     private PendingIntent pausePendingIntent;
@@ -39,12 +41,23 @@ public class BeeperService extends Service {
     private PendingIntent nextPendingIntent;
     private PendingIntent previousPendingIntent;
     private PendingIntent stopPendingIntent;
+    private long timeStarted = 0;
 
     private PendingIntent createPendingIntent(String action) {
         Intent intent = new Intent(this, BeeperService.class);
         intent.setAction(action);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
         return pendingIntent;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        this.timeStarted = System.currentTimeMillis();
+    }
+
+    public Looper getLooper() {
+        return this.handlerThread.getLooper();
     }
 
     private Notification createNotification() {
@@ -59,7 +72,7 @@ public class BeeperService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setContentTitle(title)
                 .setTicker(title)
-                .setContentText(this.stepCounter.toString())
+                .setContentText(this.getFormattedTimeElapsed())
                 .setSmallIcon(R.drawable.ic_stat_name)
                 .setLargeIcon(Bitmap.createScaledBitmap(icon, 128, 128, false))
                 .setContentIntent(pendingIntent)
@@ -78,6 +91,14 @@ public class BeeperService extends Service {
         return builder.build();
     }
 
+    private String getFormattedTimeElapsed() {
+        long interval = System.currentTimeMillis() - this.timeStarted;
+        long hr = TimeUnit.MILLISECONDS.toHours(interval);
+        long min = TimeUnit.MILLISECONDS.toMinutes(interval) %60;
+        long sec = TimeUnit.MILLISECONDS.toSeconds(interval) %60;
+        return String.format("%02d:%02d:%02d", hr, min, sec);
+    }
+
     private void startService(ArrayList<Integer> periods) {
         Log.i(LOG_TAG, "Received Start Service Intent ");
         this.notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -93,13 +114,14 @@ public class BeeperService extends Service {
 
         this.handlerThread = new HandlerThread(getResources().getString(R.string.app_name));
         this.handlerThread.start();
-        this.handler = new BeeperHandler(this.handlerThread.getLooper(), toast, ringtone);
+        this.handler = new BeeperHandler(this, toast, ringtone);
 
         Integer periodsSum = 0;
         for(Integer period : periods) {
             periodsSum += period;
-            this.handler.sendEmptyMessageDelayed(0, periodsSum * 1000);
+            this.handler.scheduleDing(periodsSum * 1000);
         }
+
 
         Notification notification = this.createNotification();
         startForeground(Constants.SERVICE_ID, notification);
@@ -123,12 +145,10 @@ public class BeeperService extends Service {
                 break;
             case Constants.PREVIOUS_SERVICE_ACTION:
                 Log.i(LOG_TAG, "Clicked Previous");
-                this.stepCounter--;
                 this.updateNotification();
                 break;
             case Constants.NEXT_SERVICE_ACTION:
                 Log.i(LOG_TAG, "Clicked Next");
-                this.stepCounter++;
                 this.updateNotification();
                 break;
             case Constants.PAUSE_SERVICE_ACTION:
@@ -150,7 +170,7 @@ public class BeeperService extends Service {
         return START_STICKY;
     }
 
-    private void updateNotification() {
+    public void updateNotification() {
         this.notificationManager.notify(Constants.SERVICE_ID, this.createNotification());
     }
 
