@@ -1,9 +1,7 @@
 package in.zbic.pikaczu;
 
-import android.content.Context;
 import android.media.Ringtone;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.widget.Toast;
 
@@ -15,9 +13,9 @@ public class BeeperHandler extends Handler {
 
     private Toast toast;
     private Ringtone ringtone;
-    private BeeperService beeperService;
+    private NotificationService beeperService;
 
-    public BeeperHandler(BeeperService beeperService, Toast toast, Ringtone ringtone) {
+    public BeeperHandler(NotificationService beeperService, Toast toast, Ringtone ringtone) {
         super(beeperService.getLooper());
         this.beeperService = beeperService;
         this.ringtone = ringtone;

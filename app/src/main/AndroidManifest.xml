@@ -9,6 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <receiver android:name=".AlarmReceiver"></receiver>
         <activity android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:launchMode="singleTop">
@@ -18,7 +19,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".BeeperService"/>
+        <service android:name=".NotificationService"/>
     </application>
 
 </manifest>

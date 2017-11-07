@@ -1,6 +1,8 @@
 package in.zbic.pikaczu;
 
 import android.app.ActivityManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -26,6 +28,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private PeriodAdapter listPeriodsAdapter;
     private AlertDialog dialogTimeSelector;
     private SharedPreferences sharedPreferences;
+    private AlarmManager alarmManager;
+    private ArrayList<PendingIntent> pendingIntents = new ArrayList<PendingIntent>();
 
 
     public ArrayList<Integer> availablePeriods = new ArrayList<Integer>();
@@ -38,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             this.chosenPeriods  = new ArrayList<Integer>();
         }
 
+        this.alarmManager = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
         this.sharedPreferences = this.getSharedPreferences(Constants.PREFERENCES_FILE, MODE_PRIVATE);
         restoreChosenPeriods();
 
@@ -57,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.listPeriodsAdapter = new PeriodAdapter(this, this.chosenPeriods, this);
         this.listPeriods.setAdapter(this.listPeriodsAdapter);
 
-        if(isServiceRunning(BeeperService.class)) {
+        if(isServiceRunning(NotificationService.class)) {
             this.buttonStart.setVisibility(View.GONE);
             this.buttonStop.setVisibility(View.VISIBLE);
             this.listPeriodsAdapter.setEnabled(false);
@@ -70,10 +75,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.buttonStop.setVisibility(View.VISIBLE);
         this.listPeriodsAdapter.setEnabled(false);
 
-        Intent startIntent = new Intent(MainActivity.this, BeeperService.class);
+        Intent startIntent = new Intent(MainActivity.this, NotificationService.class);
         startIntent.setAction(Constants.START_SERVICE_ACTION);
         startIntent.putExtra(Constants.CHOSEN_PERIODS, this.chosenPeriods);
         startService(startIntent);
+
+        this.pendingIntents.clear();
+
+        Integer periodsSum = 0;
+        for(Integer period : this.chosenPeriods) {
+            periodsSum += period;
+            Intent myIntent = new Intent(MainActivity.this, AlarmReceiver.class);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, periodsSum, myIntent, 0);
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (periodsSum*1000), pendingIntent);
+            this.pendingIntents.add(pendingIntent);
+        }
     }
 
     public void stopBeeper() {
@@ -81,9 +97,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         this.buttonStop.setVisibility(View.GONE);
         this.listPeriodsAdapter.setEnabled(true);
 
-        Intent stopIntent = new Intent(MainActivity.this, BeeperService.class);
+        Intent stopIntent = new Intent(MainActivity.this, NotificationService.class);
         stopIntent.setAction(Constants.STOP_SERVICE_ACTION);
         startService(stopIntent);
+
+        for(PendingIntent pendingIntent : this.pendingIntents) {
+            this.alarmManager.cancel(pendingIntent);
+        }
     }
 
     @Override

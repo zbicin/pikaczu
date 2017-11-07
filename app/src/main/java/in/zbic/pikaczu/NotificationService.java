@@ -8,20 +8,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -29,8 +23,8 @@ import java.util.concurrent.TimeUnit;
  * Created by krzysiek on 28.10.17.
  */
 
-public class BeeperService extends Service {
-    static final String LOG_TAG = "BeeperService";
+public class NotificationService extends Service {
+    static final String LOG_TAG = "NotificationService";
 
     private HandlerThread handlerThread;
     private BeeperHandler handler;
@@ -44,7 +38,7 @@ public class BeeperService extends Service {
     private long timeStarted = 0;
 
     private PendingIntent createPendingIntent(String action) {
-        Intent intent = new Intent(this, BeeperService.class);
+        Intent intent = new Intent(this, NotificationService.class);
         intent.setAction(action);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, 0);
         return pendingIntent;
@@ -108,20 +102,8 @@ public class BeeperService extends Service {
         this.playPendingIntent = this.createPendingIntent(Constants.PLAY_SERVICE_ACTION);
         this.stopPendingIntent = this.createPendingIntent(Constants.STOP_SERVICE_ACTION);
 
-        Uri notificationSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), notificationSoundUri);
-        Toast toast = Toast.makeText(this, "Ding!", Toast.LENGTH_SHORT);
-
         this.handlerThread = new HandlerThread(getResources().getString(R.string.app_name));
         this.handlerThread.start();
-        this.handler = new BeeperHandler(this, toast, ringtone);
-
-        Integer periodsSum = 0;
-        for(Integer period : periods) {
-            periodsSum += period;
-            this.handler.scheduleDing(periodsSum * 1000);
-        }
-
 
         Notification notification = this.createNotification();
         startForeground(Constants.SERVICE_ID, notification);
